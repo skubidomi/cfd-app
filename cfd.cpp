@@ -6,6 +6,8 @@
 #include "jacobi.h"
 #include "cfdio.h"
 
+// cfd - Computational fluid dinamics
+
 int main(int argc, char **argv)
 {
   int printfreq=1000; //output frequency
@@ -84,6 +86,7 @@ int main(int argc, char **argv)
 
   re = re / (double)scalefactor;
 
+  // cfd on an m*n grid in serial
   printf("Running CFD on %d x %d grid in serial\n",m,n);
 
   //allocate arrays
@@ -92,6 +95,8 @@ int main(int argc, char **argv)
   psitmp = new double[(m+2)*(n+2)];
 
   //zero the psi array
+  // psi data array(m+2)*(n+2) is written, all element will be 0.0
+  // the rows of the grid are one after the other
   for (i=0;i<m+2;i++)
   {
     for(j=0;j<n+2;j++)
@@ -105,7 +110,8 @@ int main(int argc, char **argv)
   zettmp = new double[(m+2)*(n+2)];;
 
   //zero the zeta array
-
+  // zet data array(m+2)*(n+2) is written, all element will be 0.0
+  // the rows of the grid are one after the other
   for (i=0;i<m+2;i++)
   {
     for(j=0;j<n+2;j++)
@@ -121,7 +127,8 @@ int main(int argc, char **argv)
   //compute normalisation factor for error
 
   bnorm=0.0;
-
+  // it goes through the grid, psi is read,
+  // bnorm is the sum of the square of the elements
   for (i=0;i<m+2;i++)
   {
     for (j=0;j<n+2;j++)
@@ -135,7 +142,8 @@ int main(int argc, char **argv)
   boundaryzet(zet,psi,m,n);
 
   //update normalisation
-
+  // zet is read,
+  // it adds the sum of the square of the elements in zet
   for (i=0;i<m+2;i++)
   {
     for (j=0;j<n+2;j++)
@@ -184,7 +192,8 @@ int main(int argc, char **argv)
     }
 
     //copy back
-
+    // psi is written, psitmp is read,
+    // it copies the psitmp content to psi except the boundary
     for(i=1;i<=m;i++)
     {
       for(j=1;j<=n;j++)
@@ -193,7 +202,8 @@ int main(int argc, char **argv)
       }
     }
 
-
+    // zet is written and zettmp is read,
+    // it copies the zettmp content to zet except the boundary
     for(i=1;i<=m;i++)
     {
       for(j=1;j<=n;j++)
