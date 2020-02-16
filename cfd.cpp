@@ -43,32 +43,38 @@ int main(int argc, char **argv)
 
   //check command line parameters and parse them
 
-  if (argc <3|| argc >4) {
+  if (argc <3|| argc >4)
+  {
     printf("Running in TEST mode\n");
     scalefactor = 10;
     numiter = 5000;
     re = -1.0;
     test_mode = 1;
-  } else {
+  }
+  else
+  {
     scalefactor=atoi(argv[1]);
     numiter=atoi(argv[2]);
   }
 
-  if (argc == 4) {
+  if (argc == 4)
+  {
     re=atof(argv[3]);
   }
 
 
-  if(!checkerr) {
+  if(!checkerr)
+  {
     printf("Scale Factor = %i, iterations = %i\n",scalefactor, numiter);
   }
-  else {
+  else
+  {
     printf("Scale Factor = %i, iterations = %i, tolerance= %g\n",scalefactor,numiter,tolerance);
   }
 
-  
+
   printf("Reynolds number = %f\n",re);
-  
+
   //Calculate b, h & w and m & n
   b = bbase*scalefactor;
   h = hbase*scalefactor;
@@ -86,56 +92,62 @@ int main(int argc, char **argv)
   psitmp = new double[(m+2)*(n+2)];
 
   //zero the psi array
-  for (i=0;i<m+2;i++) {
-    for(j=0;j<n+2;j++) {
-     psi[i*(n+2)+j]=0.0;
-   }
- }
+  for (i=0;i<m+2;i++)
+  {
+    for(j=0;j<n+2;j++)
+    {
+      psi[i*(n+2)+j]=0.0;
+    }
+  }
 
-      //allocate arrays
+  //allocate arrays
+  zet =   new double[(m+2)*(n+2)];;
+  zettmp = new double[(m+2)*(n+2)];;
 
- zet =   new double[(m+2)*(n+2)];;
- zettmp = new double[(m+2)*(n+2)];;
+  //zero the zeta array
 
-      //zero the zeta array
-
- for (i=0;i<m+2;i++) {
-   for(j=0;j<n+2;j++) {
-     zet[i*(n+2)+j]=0.0;
-   }
- }
+  for (i=0;i<m+2;i++)
+  {
+    for(j=0;j<n+2;j++)
+    {
+      zet[i*(n+2)+j]=0.0;
+    }
+  }
 
   //set the psi boundary conditions
 
- boundarypsi(psi,m,n,b,h,w);
+  boundarypsi(psi,m,n,b,h,w);
 
   //compute normalisation factor for error
 
- bnorm=0.0;
+  bnorm=0.0;
 
- for (i=0;i<m+2;i++) {
-  for (j=0;j<n+2;j++) {
-    bnorm += psi[i*(n+2)+j]*psi[i*(n+2)+j];
-   }
+  for (i=0;i<m+2;i++)
+  {
+    for (j=0;j<n+2;j++)
+    {
+      bnorm += psi[i*(n+2)+j]*psi[i*(n+2)+j];
+    }
   }
 
 
   //update zeta BCs that depend on psi
   boundaryzet(zet,psi,m,n);
 
-        //update normalisation
+  //update normalisation
 
   for (i=0;i<m+2;i++)
   {
-   for (j=0;j<n+2;j++) {
-     bnorm += zet[i*(n+2)+j]*zet[i*(n+2)+j];
-   }
+    for (j=0;j<n+2;j++)
+    {
+      bnorm += zet[i*(n+2)+j]*zet[i*(n+2)+j];
+    }
   }
 
 
   bnorm=sqrt(bnorm);
 
-    //begin iterative Jacobi loop
+  //begin iterative Jacobi loop
 
   printf("\nStarting main loop...\n\n");
 
@@ -143,65 +155,69 @@ int main(int argc, char **argv)
 
   for(iter=1;iter<=numiter;iter++)
   {
-        //calculate psi for next iteration
 
+    //calculate psi for next iteration
 
-   jacobistepvort(zettmp,psitmp,zet,psi,m,n,re);
+    jacobistepvort(zettmp,psitmp,zet,psi,m,n,re);
 
+    //calculate current error if required
 
-        //calculate current error if required
+    if (checkerr || iter == numiter)
+    {
+      error = deltasq(psitmp,psi,m,n);
 
-   if (checkerr || iter == numiter) {
-     error = deltasq(psitmp,psi,m,n);
+      error += deltasq(zettmp,zet,m,n);
 
-     error += deltasq(zettmp,zet,m,n);
-
-
-     error=sqrt(error);
-     error=error/bnorm;
-   }
-
-        //quit early if we have reached required tolerance
-
-   if (checkerr) {
-     if (error < tolerance) {
-       printf("Converged on iteration %d\n",iter);
-       break;
-     }
-   }
-
-        //copy back
-
-   for(i=1;i<=m;i++) {
-     for(j=1;j<=n;j++) {
-       psi[i*(n+2)+j]=psitmp[i*(n+2)+j];
-     }
-   }
-
-
-   for(i=1;i<=m;i++) {
-     for(j=1;j<=n;j++) {
-      zet[i*(n+2)+j]=zettmp[i*(n+2)+j];
+      error=sqrt(error);
+      error=error/bnorm;
     }
-  }
+
+    //quit early if we have reached required tolerance
+
+    if (checkerr)
+    {
+      if (error < tolerance)
+      {
+        printf("Converged on iteration %d\n",iter);
+        break;
+      }
+    }
+
+    //copy back
+
+    for(i=1;i<=m;i++)
+    {
+      for(j=1;j<=n;j++)
+      {
+        psi[i*(n+2)+j]=psitmp[i*(n+2)+j];
+      }
+    }
 
 
+    for(i=1;i<=m;i++)
+    {
+      for(j=1;j<=n;j++)
+      {
+        zet[i*(n+2)+j]=zettmp[i*(n+2)+j];
+      }
+    }
 
-  	  //update zeta BCs that depend on psi
-  boundaryzet(zet,psi,m,n);
+  	//update zeta BCs that depend on psi
+    boundaryzet(zet,psi,m,n);
 
+    //print loop information
 
-        //print loop information
-
-  if(iter%printfreq == 0)
-  {
-   if (!checkerr) {
-     printf("Completed iteration %d\n",iter);
-   }
-   else {
-     printf("Completed iteration %d, error = %g\n",iter,error);
-   }
-  }
+    if(iter%printfreq == 0)
+    {
+      if (!checkerr)
+      {
+        printf("Completed iteration %d\n",iter);
+      }
+      else
+      {
+        printf("Completed iteration %d, error = %g\n",iter,error);
+      }
+    }
   }
 
   if (iter > numiter) iter=numiter;
@@ -212,18 +228,23 @@ int main(int argc, char **argv)
   titer=ttot/(double)iter;
 
 
-    //print out some stats
+  //print out some stats
 
   printf("\n... finished\n");
   printf("After %d iterations, the error is %g\n",iter,error);
   printf("Time for %d iterations was %g seconds\n",iter,ttot);
   printf("Each iteration took %g seconds\n",titer);
 
-  if (test_mode == 1) {
+  if (test_mode == 1)
+  {
     if (iter == 5000 && error > 0.0002 && error < 0.0003)
+    {
       printf("TEST PASSED\n");
+    }
     else
+    {
       printf("TEST FAILED\n");
+    }
   }
 
     //output results
@@ -232,14 +253,12 @@ int main(int argc, char **argv)
 
   writeplotfile(m,n,scalefactor);
 
-    //free un-needed arrays
+  //free un-needed arrays
   delete[] psi;
   delete[] psitmp;
 
-
   delete[] zet;
   delete[] zettmp;
-
 
   printf("... finished\n");
 
